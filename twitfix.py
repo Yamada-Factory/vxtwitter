@@ -135,6 +135,10 @@ def renderArticleTweetEmbed(tweetData,appnameSuffix=""):
                     color=config['config']['color']
                     )
 
+@app.route('/healthcheck')
+def healthcheck():
+    return "OK"
+
 @app.route('/robots.txt')
 def robots():
     return "User-agent: *\nDisallow: /"

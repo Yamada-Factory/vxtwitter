@@ -18,12 +18,12 @@ services:
     volumes:
       - "./twitfix.ini:/twitfix/twitfix.ini:ro"
       - "./config.json:/twitfix/config.json:ro"
-    depends_on:
-      - db
+    # depends_on:
+    #   - db
 
-  db:
-    image: mongo:5.0.9
-    container_name: twitfix_db
-    volumes:
-      - "./db:/data/db"
+  # db:
+  #   image: mongo:5.0.9
+  #   container_name: twitfix_db
+  #   volumes:
+  #     - "./db:/data/db"
 

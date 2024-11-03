@@ -138,7 +138,7 @@ def extractStatus_token(url,workaroundTokens):
     random.shuffle(tokens)
     for authToken in tokens:
         try:
-            
+
             tweet = requests.get(f"https://api.{twitterUrl}/1.1/statuses/show/" + twid + ".json?tweet_mode=extended&cards_platform=Web-12&include_cards=1&include_reply_count=1&include_user_entities=0", headers=getAuthHeaders(bearer,authToken=authToken))
             output = tweet.json()
             if "errors" in output:
@@ -201,8 +201,8 @@ def extractStatus_syndication(url,workaroundTokens=None):
         raise TwExtractError(400, "Extract error")
     twid = m.group(2)
     tweet = requests.get("https://cdn.syndication.twimg.com/tweet-result?id=" + twid+"&token="+calcSyndicationToken(twid))
-    
-    
+
+
     if tweet.status_code == 404:
         raise TwExtractError(404, "Tweet not found")
     output = tweet.json()
@@ -210,7 +210,7 @@ def extractStatus_syndication(url,workaroundTokens=None):
         # pick the first error and create a twExtractError
         error = output["errors"][0]
         raise TwExtractError(error["code"], error["message"])
-    
+
     # change returned data to match the one from the other methods
     output['full_text'] = output['text']
     output['user']['profile_image_url'] = output['user']['profile_image_url_https']
@@ -272,7 +272,7 @@ def extractStatusV2(url,workaroundTokens):
                 # try another token
                 continue
             output = tweet.json()
-            
+
             if "errors" in output:
                 print(f"Error in output: {json.dumps(output['errors'])}")
                 # try another token
@@ -316,7 +316,7 @@ def extractStatusV2Android(url,workaroundTokens):
     random.shuffle(tokens)
     for authToken in tokens:
         try:
-            
+
             vars = json.loads('{"referrer":"home","includeTweetImpression":true,"includeHasBirdwatchNotes":false,"isReaderMode":false,"includeEditPerspective":false,"includeEditControl":true,"focalTweetId":0,"includeCommunityTweetRelationship":true,"includeTweetVisibilityNudge":true}')
             vars['focalTweetId'] = int(twid)
             tweet = twitterApiGet(f"https://x.com/i/api/graphql/{androidGraphql_api}/ConversationTimelineV2?variables={urllib.parse.quote(json.dumps(vars))}&features={urllib.parse.quote(androidGraphqlFeatures)}", authToken=authToken)
@@ -330,7 +330,7 @@ def extractStatusV2Android(url,workaroundTokens):
                 # try another token
                 continue
             output = tweet.json()
-            
+
             if "errors" in output:
                 print(f"Error in output: {json.dumps(output['errors'])}")
                 # try another token
@@ -373,7 +373,7 @@ def extractStatusV2TweetDetail(url,workaroundTokens):
     random.shuffle(tokens)
     for authToken in tokens:
         try:
-            
+
             vars = json.loads('{"focalTweetId":"0","with_rux_injections":false,"includePromotedContent":true,"withCommunity":true,"withQuickPromoteEligibilityTweetFields":true,"withBirdwatchNotes":true,"withVoice":true,"withV2Timeline":true}')
             vars['focalTweetId'] = str(twid)
             tweet = twitterApiGet(f"https://x.com/i/api/graphql/{tweetDetailGraphql_api}/TweetDetail?variables={urllib.parse.quote(json.dumps(vars))}&features={urllib.parse.quote(tweetDetailGraphqlFeatures)}", authToken=authToken)
@@ -387,7 +387,7 @@ def extractStatusV2TweetDetail(url,workaroundTokens):
                 # try another token
                 continue
             output = tweet.json()
-            
+
             if "errors" in output:
                 print(f"Error in output: {json.dumps(output['errors'])}")
                 # try another token
@@ -439,7 +439,7 @@ def extractStatusV2Anon(url,x):
         if tweet.status_code == 429:
             raise TwExtractError(400, "Extract error")
         output = tweet.json()
-        
+
         if "errors" in output:
             raise TwExtractError(400, "Extract error")
         entry=output['data']['tweetResult']
@@ -508,7 +508,7 @@ def extractUser(url,workaroundTokens):
         if authToken.startswith("oa|"): # oauth token not supported atm
             continue
         try:
-            
+
             reqHeaders = getAuthHeaders(bearer,authToken=authToken)
             if not useId:
                 user = requests.get(f"https://api.{twitterUrl}/1.1/users/show.json?screen_name={screen_name}",headers=reqHeaders)
@@ -525,7 +525,7 @@ def extractUser(url,workaroundTokens):
     raise TwExtractError(400, "Extract error")
 
 #def extractUserByID(id):
-    
+
 
 def lambda_handler(event, context):
     if ("queryStringParameters" not in event):

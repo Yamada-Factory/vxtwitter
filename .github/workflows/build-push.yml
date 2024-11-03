@@ -10,7 +10,7 @@ permissions:
 jobs:
   push_to_registry:
     name: Docker Build and Push
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true

@@ -158,14 +158,17 @@ def getTweetData(twitter_url,include_txt="false",include_rtf="false"):
         return cachedVNF
 
     try:
-        rawTweetData = twExtract.extractStatusV2Anon(twitter_url)
-    except:
+        rawTweetData = twExtract.extractStatusV2Anon(twitter_url, None)
+    except Exception as e:
+        log.error(f"Failed to extract tweet data: {e}")
         rawTweetData = None
+    print(rawTweetData)
     if rawTweetData is None:
         try:
             rawTweetData = twExtract.extractStatus(twitter_url,workaroundTokens=config['config']['workaroundTokens'].split(','))
         except:
             rawTweetData = None
+    print(rawTweetData)
     if rawTweetData == None or 'error' in rawTweetData:
         return None
 

@@ -18,7 +18,6 @@ services:
     volumes:
       - "./twitfix.ini:/twitfix/twitfix.ini:ro"
       - "./config.json:/twitfix/config.json:ro"
-      - "./logs:/twitfix/logs"
     # depends_on:
     #   - db
 

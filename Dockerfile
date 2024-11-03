@@ -8,6 +8,7 @@ WORKDIR /twitfix
 COPY requirements.txt requirements.txt
 COPY --from=build /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
 RUN pip install -r requirements.txt
+RUN pip install yt-dlp
 
 FROM python:3.10-alpine AS runner
 EXPOSE 9000

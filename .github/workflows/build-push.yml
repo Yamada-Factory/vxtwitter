@@ -40,6 +40,6 @@ jobs:
         with:
           file: Dockerfile
           push: true
-          tags: ${{ steps.login-ecr.outputs.registry }}/vxtwitter-api:latest
+          tags: ${{ steps.login-ecr.outputs.registry }}/vxtwitter/api:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

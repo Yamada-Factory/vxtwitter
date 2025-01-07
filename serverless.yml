@@ -4,6 +4,7 @@ provider:
   name: aws
   runtime: python3.12
   stage: dev
+  architecture: arm64
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -46,7 +47,7 @@ functions:
     handler: wsgi_handler.handler
     url: true
     timeout: 15
-    memorySize: 150
+    memorySize: 500
     layers:
       - Ref: PythonRequirementsLambdaLayer
 
@@ -57,7 +58,7 @@ custom:
     app: twitfix.app
   pythonRequirements:
     layer: true
-    dockerizePip: false
+    dockerizePip: true
 
 resources:
   Resources:

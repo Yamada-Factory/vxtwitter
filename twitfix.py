@@ -1,16 +1,19 @@
 from weakref import finalize
 from flask import Flask, render_template, request, redirect, abort, Response, send_from_directory, url_for, send_file, make_response, jsonify
+
+from configHandler import config
+remoteCombine='combination_method' in config['config'] and config['config']['combination_method'] != "local"
+
+if not remoteCombine:
+    import combineImg
+
 from flask_cors import CORS
-import re
 import os
-import combineImg
 from io import BytesIO, StringIO
 import urllib
 import msgs
 import twExtract as twExtract
-from configHandler import config
 from cache import addVnfToLinkCache,getVnfFromLinkCache
-from yt_dlp.utils import ExtractorError
 import vxlogging as log
 from utils import getTweetIdFromUrl, pathregex
 from vxApi import getApiResponse
@@ -323,10 +326,10 @@ def rendercombined():
     # get "imgs" from request arguments
     imgs = request.args.get("imgs", "")
 
-    if 'combination_method' in config['config'] and config['config']['combination_method'] != "local":
+    if remoteCombine:
+        # Redirecting here instead of setting the embed URL directly to this because if the config combination_method changes in the future, old URLs will still work
         url = config['config']['combination_method'] + "/rendercombined.jpg?imgs=" + imgs
         return redirect(url, 302)
-    # Redirecting here instead of setting the embed URL directly to this because if the config combination_method changes in the future, old URLs will still work
 
     imgs = imgs.split(",")
     if (len(imgs) == 0 or len(imgs)>4):

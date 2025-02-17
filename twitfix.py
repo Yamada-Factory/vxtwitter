@@ -230,7 +230,7 @@ def twitfix(sub_path):
         log.error("Tweet Data Get failed for "+twitter_url)
 
         if isApiRequest:
-            return jsonify({"error": msgs.tweetNotFound}), 400
+            return jsonify({"error": msgs.tweetNotFound}), 500
         else:
             return message(msgs.tweetNotFound)
 

@@ -228,7 +228,12 @@ def twitfix(sub_path):
     tweetData = getTweetData(twitter_url,include_txt,include_rtf)
     if tweetData is None:
         log.error("Tweet Data Get failed for "+twitter_url)
-        return message(msgs.failedToScan)
+
+        if isApiRequest:
+            return jsonify({"error": msgs.tweetNotFound}), 400
+        else:
+            return message(msgs.tweetNotFound)
+
     qrt = None
     if 'qrtURL' in tweetData and tweetData['qrtURL'] is not None:
         qrt = getTweetData(tweetData['qrtURL'])

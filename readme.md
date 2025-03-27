@@ -14,6 +14,8 @@ Just replace twitter.com with vxtwitter.com on the link to the tweet! `https://t
 
 You can also replace x.com links with fixvx.com
 
+Accessing `https://vxtwitter.com/preferences` will allow you to change how you are redirected to tweets when opening them in your browser - Either by opening them on the mobile app, or opening the tweet in a [Nitter](https://github.com/zedeus/nitter) instance.
+
 ## API
 If you're a nerd like me and want to use information about a tweet in your code, you can make a request to `api.vxtwitter.com` to get basic information about a tweet:
 `https://api.vxtwitter.com/Twitter/status/1577730467436138524`

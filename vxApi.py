@@ -3,6 +3,21 @@ from datetime import datetime
 from configHandler import config
 from utils import stripEndTCO
 
+def getApiUserResponse(user):
+    return {
+        "id": user["id"],
+        "screen_name": user["screen_name"],
+        "name": user["name"],
+        "profile_image_url": user["profile_image_url_https"],
+        "description": user["description"],
+        "location": user["location"],
+        "followers_count": user["followers_count"],
+        "following_count": user["friends_count"],
+        "tweet_count": user["statuses_count"],
+        "created_at": user["created_at"],
+        "protected": user["protected"],
+    }
+
 def getApiResponse(tweet,include_txt=False,include_rtf=False):
     tweetL = tweet["legacy"]
     if "user_result" in tweet["core"]:

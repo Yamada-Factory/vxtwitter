@@ -6,7 +6,7 @@ testVideoTweet="https://twitter.com/pdxdylan/status/1540398733669666818"
 testMediaTweet="https://twitter.com/pdxdylan/status/1534672932106035200"
 testMultiMediaTweet="https://twitter.com/pdxdylan/status/1532006436703715331"
 testQRTTweet="https://twitter.com/pdxdylan/status/1611477137319514129"
-testQrtCeptionTweet="https://twitter.com/CatherineShu/status/585253766271672320"
+testQrtCeptionTweet="https://twitter.com/CatherineShu/status/585253766271672320" # TODO: tweet is deleted
 testQrtVideoTweet="https://twitter.com/pdxdylan/status/1674561759422578690"
 testNSFWTweet="https://twitter.com/kuyacoy/status/1581185279376838657"
 testPollTweet="https://twitter.com/norm/status/651169346518056960"
@@ -26,7 +26,8 @@ testMixedMediaTweet_compare={'text': 'Some of us here are definitely big nerds a
 testVinePlayerTweet_compare={'text': 'You wanted old ROBLOX back, you got it. Check out our sweet "new" look! #BringBackOldROBLOX https://vine.co/v/OL9VqvM6wJh', 'date': 'Wed Apr 01 16:17:13 +0000 2015', 'tweetURL': 'https://twitter.com/Roblox/status/583302104342638592', 'tweetID': '583302104342638592', 'conversationID': '583302104342638592', 'mediaURLs': ['https://v.cdn.vine.co/r/videos/20A1BE53011195086166081318912_3fe3b526b1a.1.5.3156516531034157495.mp4?versionId=DI1mMu7EI6zcLbvgucyp3GHebdz8.9cQ'], 'media_extended': [{'url': 'https://v.cdn.vine.co/r/videos/20A1BE53011195086166081318912_3fe3b526b1a.1.5.3156516531034157495.mp4?versionId=DI1mMu7EI6zcLbvgucyp3GHebdz8.9cQ', 'type': 'video', 'size': {'width': 435, 'height': 435}}], 'possibly_sensitive': False, 'hashtags': [], 'qrtURL': None, 'allSameType': True, 'hasMedia': True, 'combinedMediaUrl': None, 'pollData': {'options': []}, 'article': None, 'date_epoch': 1427905033}
 
 testUser="https://twitter.com/jack"
-testUserID = "https://twitter.com/i/user/12"
+testUserID=12 # could also be 170824883
+testUserIDUrl = "https://twitter.com/i/user/"+str(testUserID)
 testUserWeirdURLs=["https://twitter.com/jack?lang=en","https://twitter.com/jack/with_replies","https://twitter.com/jack/media","https://twitter.com/jack/likes","https://twitter.com/jack/with_replies?lang=en","https://twitter.com/jack/media?lang=en","https://twitter.com/jack/likes?lang=en","https://twitter.com/jack/"]
 testTextTweet="https://twitter.com/jack/status/20"
 

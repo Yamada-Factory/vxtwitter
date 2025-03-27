@@ -36,3 +36,9 @@ def test_api_include_rtf_nomedia():
     jData = resp.get_json()
     assert resp.status_code==200
     assert not any(".rtf" in i for i in jData["mediaURLs"])
+
+def test_api_user():
+    resp = client.get(testUser.replace("https://twitter.com","https://api.vxtwitter.com")+"?include_rtf=true",headers={"User-Agent":"test"})
+    jData = resp.get_json()
+    assert resp.status_code==200
+    assert jData["screen_name"]=="jack"

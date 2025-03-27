@@ -48,7 +48,7 @@ def test_twextract_UserExtract():
     assert user["created_at"] == "Tue Mar 21 20:50:14 +0000 2006"
 
 def test_twextract_UserExtractID():
-    user = twExtract.extractUser(testUserID,workaroundTokens=tokens)
+    user = twExtract.extractUser(testUserIDUrl,workaroundTokens=tokens)
     assert user["screen_name"]=="jack"
     assert user["id"]==12
     assert user["created_at"] == "Tue Mar 21 20:50:14 +0000 2006"
@@ -100,3 +100,8 @@ def test_twextract_pollTweetExtract(): # basic check if poll data exists
 
 def test_twextract_NSFW_TweetExtract():
     tweet = twExtract.extractStatus(testNSFWTweet,workaroundTokens=tokens) # For now just test that there's no error
+
+'''
+def test_twextract_feed():
+    tweet = twExtract.extractUserFeedFromId(testUserID,workaroundTokens=tokens)
+'''

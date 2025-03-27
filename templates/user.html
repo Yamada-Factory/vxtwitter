@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block head %}
+<meta property="og:image" content="{{ pfp }}" />
+
+<meta name="twitter:card" content="tweet" />
+
+<meta content='text/html; charset=UTF-8' http-equiv='Content-Type' />
+<meta content="{{ color }}" name="theme-color" />
+<meta property="og:site_name" content="{{ appname }}">
+
+<meta name="twitter:title" content="{{ user['name'] }} (@{{ user['screen_name'] }})" />
+
+<meta name="twitter:image" content="{{ user['profile_image_url'] }}" />
+<meta name="twitter:creator" content="@{{ user['name'] }}" />
+
+<meta property="og:description" content="{{ desc }}" />
+
+<link rel="alternate" href="{{ host }}/oembed.json?desc={{ urlUser }}&user=Twitter&link={{ link }}&ttype=link&provider={{ appname|urlencode }}" type="application/json+oembed" title="{{ user['name'] }}">
+<meta http-equiv="refresh" content="1; url = {{ link }}" /> {% endblock %} {% block body %} Redirecting you to the tweet in a moment. <a href="{{ link }}">Or click here.</a> {% endblock %}

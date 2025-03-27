@@ -59,6 +59,7 @@ custom:
   pythonRequirements:
     layer: true
     dockerizePip: true
+    dockerRunCmdExtraArgs: ['--platform','linux/arm64']
 
 resources:
   Resources:

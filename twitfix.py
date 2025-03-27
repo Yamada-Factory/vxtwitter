@@ -16,7 +16,7 @@ import twExtract as twExtract
 from cache import addVnfToLinkCache,getVnfFromLinkCache
 import vxlogging as log
 from utils import getTweetIdFromUrl, pathregex
-from vxApi import getApiResponse
+from vxApi import getApiResponse, getApiUserResponse
 from urllib.parse import urlparse
 from PyRTF.Elements import Document
 from PyRTF.document.section import Section
@@ -142,6 +142,17 @@ def renderArticleTweetEmbed(tweetData,appnameSuffix=""):
 def healthcheck():
     return "OK"
 
+def renderUserEmbed(userData,appnameSuffix=""):
+    return render_template("user.html",
+                    user=userData,
+                    host=config['config']['url'],
+                    desc=userData["description"],
+                    urlEncodedDesc=urllib.parse.quote(userData["description"]),
+                    link=f'https://twitter.com/{userData["screen_name"]}',
+                    appname=config['config']['appname'],
+                    color=config['config']['color']
+                    )
+
 @app.route('/robots.txt')
 def robots():
     return "User-agent: *\nDisallow: /"
@@ -168,11 +179,17 @@ def getTweetData(twitter_url,include_txt="false",include_rtf="false"):
         rawTweetData = twExtract.extractStatusV2Anon(twitter_url, None)
     except Exception as e:
         log.error(f"Failed to extract tweet data: {e}")
+    except:
         rawTweetData = None
     print(rawTweetData)
     if rawTweetData is None:
         try:
-            rawTweetData = twExtract.extractStatus(twitter_url,workaroundTokens=config['config']['workaroundTokens'].split(','))
+            if config['config']['workaroundTokens'] is not None:
+                workaroundTokens = config['config']['workaroundTokens'].split(",")
+            else:
+                workaroundTokens = None
+
+            rawTweetData = twExtract.extractStatus(twitter_url,workaroundTokens=workaroundTokens)
         except:
             rawTweetData = None
     print(rawTweetData)
@@ -187,6 +204,11 @@ def getTweetData(twitter_url,include_txt="false",include_rtf="false"):
     if include_txt == "false" and include_rtf == "false":
         addVnfToLinkCache(twitter_url,tweetData)
     return tweetData
+
+def getUserData(twitter_url):
+    rawUserData = twExtract.extractUser(twitter_url,workaroundTokens=config['config']['workaroundTokens'].split(','))
+    userData = getApiUserResponse(rawUserData)
+    return userData
 
 def determineEmbedTweet(tweetData):
     # Determine which tweet, i.e main or QRT, to embed the media from.
@@ -203,6 +225,8 @@ def determineEmbedTweet(tweetData):
 
 @app.route('/<path:sub_path>') # Default endpoint used by everything
 def twitfix(sub_path):
+    isApiRequest=request.url.startswith("https://api.vx") or request.url.startswith("http://api.vx")
+    isApiRequest = True
     if sub_path in staticFiles:
         if 'path' not in staticFiles[sub_path] or staticFiles[sub_path]["path"] == None:
             staticFiles[sub_path]["path"] = sub_path
@@ -211,10 +235,26 @@ def twitfix(sub_path):
         sub_path = "i/" + sub_path
     match = pathregex.search(sub_path)
     if match is None:
+        # test for .com/username
+        if sub_path.count("/") == 0:
+            username=sub_path
+            extra=None
+        else:
+            # get first subpath
+            username=sub_path.split("/")[0]
+            extra = sub_path.split("/")[1]
+        if extra in [None,"with_replies","media","likes","highlights","superfollows","media",''] and username != "" and username != None:
+            userData = getUserData(f"https://twitter.com/{username}")
+            if isApiRequest:
+                if userData is None:
+                    abort(404)
+                return userData
+            else:
+                if userData is None:
+                    return message(msgs.failedToScan)
+                return renderUserEmbed(userData)
         abort(404)
     twitter_url = f'https://twitter.com/i/status/{getTweetIdFromUrl(sub_path)}'
-    # isApiRequest=request.url.startswith("https://api.vx") or request.url.startswith("http://api.vx")
-    isApiRequest = True
 
     include_txt="false"
     include_rtf="false"

@@ -1,8 +1,9 @@
 import twitfix, cache, twExtract
 from vx_testdata import *
+from twExtract import twUtils
 
 def test_calcSyndicationToken():
-    assert twExtract.calcSyndicationToken("1691389765483200513") == "43lnobuxzql"
+    assert twUtils.calcSyndicationToken("1691389765483200513") == "43lnobuxzql"
 
 def test_addToCache():
     cache.clearCache()

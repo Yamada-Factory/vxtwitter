@@ -5,8 +5,10 @@ import re
 import os
 import random
 import urllib.parse
-import math
 from oauthlib import oauth1
+import sys
+sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+import twUtils
 bearer="Bearer AAAAAAAAAAAAAAAAAAAAAPYXBAAAAAAACLXUNDekMxqa8h%2F40K4moUkGsoc%3DTYfbDKbT3jJPCEVnMYqilB28NHfOPqkca3qaAxGfsyKCs0wRbw"
 v2bearer="Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
 androidBearer="Bearer AAAAAAAAAAAAAAAAAAAAAFXzAwAAAAAAMHCxpeSDG1gLNLghVe8d74hl6k4%3DRUMF4xAQLsbeBhTSRrCiQpJtxoGWeyHrDb5te2jpGskWDFW82F"
@@ -32,6 +34,10 @@ androidGraphql_api="llQH5PFIRlenVrlKJU8jNA"
 
 tweetDetailGraphqlFeatures='{"rweb_tipjar_consumption_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":true,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"communities_web_enable_tweet_community_results_fetch":true,"c9s_tweet_anatomy_moderator_badge_enabled":true,"articles_preview_enabled":true,"tweetypie_unmention_optimization_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"creator_subscriptions_quote_tweet_preview_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"rweb_video_timestamps_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"responsive_web_enhance_cards_enabled":false}'
 tweetDetailGraphql_api="e7RKseIxLu7HgkWNKZ6qnw"
+
+# this is for UserTweets endpoint
+tweetFeedGraphqlFeatures='{"profile_label_improvements_pcf_label_in_post_enabled":true,"rweb_tipjar_consumption_enabled":true,"responsive_web_graphql_exclude_directive_enabled":true,"verified_phone_label_enabled":false,"creator_subscriptions_tweet_preview_api_enabled":true,"responsive_web_graphql_timeline_navigation_enabled":true,"responsive_web_graphql_skip_user_profile_image_extensions_enabled":false,"premium_content_api_read_enabled":false,"communities_web_enable_tweet_community_results_fetch":true,"c9s_tweet_anatomy_moderator_badge_enabled":true,"responsive_web_grok_analyze_button_fetch_trends_enabled":false,"responsive_web_grok_analyze_post_followups_enabled":true,"responsive_web_jetfuel_frame":false,"responsive_web_grok_share_attachment_enabled":true,"articles_preview_enabled":true,"responsive_web_edit_tweet_api_enabled":true,"graphql_is_translatable_rweb_tweet_is_translatable_enabled":true,"view_counts_everywhere_api_enabled":true,"longform_notetweets_consumption_enabled":true,"responsive_web_twitter_article_tweet_consumption_enabled":true,"tweet_awards_web_tipping_enabled":false,"responsive_web_grok_analysis_button_from_backend":true,"creator_subscriptions_quote_tweet_preview_enabled":false,"freedom_of_speech_not_reach_fetch_enabled":true,"standardized_nudges_misinfo":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"rweb_video_timestamps_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"longform_notetweets_inline_media_enabled":true,"responsive_web_grok_image_annotation_enabled":true,"responsive_web_enhance_cards_enabled":false}'
+tweetFeedGraphql_api="Y9WM4Id6UcGFE8Z-hbnixw"
 
 twitterUrl = "x.com" # doubt this will change but just in case
 class TwExtractError(Exception):
@@ -166,41 +172,13 @@ def extractStatus_guestToken(url):
         raise TwExtractError(error["code"], error["message"])
     return output
 
-digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-def baseConversion(x, base):
-    result = ''
-    i = int(x)
-    while i > 0:
-        result = digits[i % base] + result
-        i = i // base
-    if int(x) != x:
-        result += '.'
-        i = x - int(x)
-        d = 0
-        while i != int(i):
-            result += digits[int(i * base % base)]
-            i = i * base
-            d += 1
-            if d >= 8:
-                break
-    return result
-
-def calcSyndicationToken(idStr):
-    id = int(idStr) / 1000000000000000 * math.pi
-    o = baseConversion(x=id, base=int(math.pow(6, 2)))
-    c = o.replace('0', '').replace('.', '')
-    if c == '':
-        c = '0'
-    return c
-
 def extractStatus_syndication(url,workaroundTokens=None):
     # https://github.com/mikf/gallery-dl/blob/46cae04aa3a113c7b6bbee1bb468669564b14ae8/gallery_dl/extractor/twitter.py#L1784
     m = re.search(pathregex, url)
     if m is None:
         raise TwExtractError(400, "Extract error")
     twid = m.group(2)
-    tweet = requests.get("https://cdn.syndication.twimg.com/tweet-result?id=" + twid+"&token="+calcSyndicationToken(twid))
+    tweet = requests.get("https://cdn.syndication.twimg.com/tweet-result?id=" + twid+"&token="+twUtils.calcSyndicationToken(twid))
 
 
     if tweet.status_code == 404:
@@ -524,8 +502,32 @@ def extractUser(url,workaroundTokens):
             continue
     raise TwExtractError(400, "Extract error")
 
-#def extractUserByID(id):
+def extractUserFeedFromId(userId,workaroundTokens):
+    tokens = workaroundTokens
+    random.shuffle(tokens)
+    for authToken in tokens:
+        if authToken.startswith("oa|"): # oauth token not supported atm
+            # TODO: https://api.twitter.com/graphql/x31u1gdnjcqtiVZFc1zWnQ/UserWithProfileTweetsQueryV2?variables={"cursor":"?","includeTweetImpression":true,"includeHasBirdwatchNotes":false,"includeEditPerspective":false,"includeEditControl":true,"count":40,"rest_id":"12","includeTweetVisibilityNudge":true,"autoplay_enabled":true}&features={"longform_notetweets_inline_media_enabled":true,"super_follow_badge_privacy_enabled":true,"longform_notetweets_rich_text_read_enabled":true,"super_follow_user_api_enabled":true,"unified_cards_ad_metadata_container_dynamic_card_content_query_enabled":true,"super_follow_tweet_api_enabled":true,"articles_api_enabled":true,"android_graphql_skip_api_media_color_palette":true,"creator_subscriptions_tweet_preview_api_enabled":true,"freedom_of_speech_not_reach_fetch_enabled":true,"tweetypie_unmention_optimization_enabled":true,"longform_notetweets_consumption_enabled":true,"subscriptions_verification_info_enabled":true,"blue_business_profile_image_shape_enabled":true,"tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled":true,"immersive_video_status_linkable_timestamps":false,"super_follow_exclusive_tweet_notifications_enabled":true}
+            continue
+        try:
+            vars = json.loads('{"userId":"x","count":20,"includePromotedContent":true,"withQuickPromoteEligibilityTweetFields":true,"withVoice":true,"withV2Timeline":true}')
+            vars['userId'] = str(userId)
+            vars['includePromotedContent'] = False # idk if this works
+            reqHeaders = getAuthHeaders(bearer,authToken=authToken)
+            reqHeaders["x-client-transaction-id"] = twUtils.generate_transaction_id("GET","/i/api/graphql/x31u1gdnjcqtiVZFc1zWnQ/UserWithProfileTweetsQueryV2")
+            feed = requests.get(f"https://{twitterUrl}/i/api/graphql/{tweetFeedGraphql_api}/UserTweets?variables={urllib.parse.quote(json.dumps(vars))}&features={urllib.parse.quote(tweetFeedGraphqlFeatures)}", reqHeaders)
+            output = feed.json()
+            if "errors" in output:
+                # pick the first error and create a twExtractError
+                error = output["errors"][0]
+                raise TwExtractError(error["code"], error["message"])
+            return output
+        except Exception as e:
+            continue
+    raise TwExtractError(400, "Extract error")
 
+def extractUserFeed(username,workaroundTokens):
+    pass
 
 def lambda_handler(event, context):
     if ("queryStringParameters" not in event):

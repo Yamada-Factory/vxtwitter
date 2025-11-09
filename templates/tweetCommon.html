@@ -2,7 +2,21 @@
 <meta content="{{ color }}" name="theme-color" />
 <meta property="og:site_name" content="{{ appname }}">
 
-<meta name="twitter:title" content="{{ tweet['user_name'] }} (@{{ tweet['user_screen_name'] }})" />
+<meta name="og:title" content="{{ tweet['user_name'] }} (@{{ tweet['user_screen_name'] }})" />
+
+{% if activityLink %}
+<link type="application/activity+json" href="{{ activityLink|safe }}" />
+{% endif %}
+
+{% if sicon %}
+<!-- Video icon created by Rizki Ahmad Fauzi - Flaticon -->
+<!-- Picture and Text icon created by Freepik - Flaticon -->
+<!-- Gif file icons created by Grand Iconic - Flaticon -->
+<link rel="apple-touch-icon" sizes="128x128" href="/{{ sicon }}.png">
+{% else %}
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+{% endif %}
+
 <script src="/openInApp.js"></script>
 <script>document.addEventListener('DOMContentLoaded',function(){openTweet('{{ tweet["tweetID"] }}')})</script>
 <style>

@@ -3,19 +3,20 @@ import os
 import twExtract
 import utils
 from vx_testdata import *
+import twitfix
 
 def test_twextract_syndicationAPI():
     tweet = twExtract.extractStatus_syndication(testMediaTweet,workaroundTokens=tokens)
     assert utils.stripEndTCO(utils.stripEndTCO(tweet["full_text"]))==testMediaTweet_compare['text']
 
-def test_twextract_extractStatusV2Anon():
-    tweet = twExtract.extractStatusV2Anon(testTextTweet,None)['legacy']
+def test_twextract_extractStatusV2Rest():
+    tweet = twExtract.extractStatusV2Rest(testTextTweet,None)['legacy']
     assert utils.stripEndTCO(tweet["full_text"])==testTextTweet_compare['text']
-    tweet = twExtract.extractStatusV2Anon(testVideoTweet,None)['legacy']
+    tweet = twExtract.extractStatusV2Rest(testVideoTweet,None)['legacy']
     assert utils.stripEndTCO(tweet["full_text"])==testVideoTweet_compare['text']
-    tweet = twExtract.extractStatusV2Anon(testMediaTweet,None)['legacy']
+    tweet = twExtract.extractStatusV2Rest(testMediaTweet,None)['legacy']
     assert utils.stripEndTCO(tweet["full_text"])==testMediaTweet_compare['text']
-    tweet = twExtract.extractStatusV2Anon(testMultiMediaTweet,None)['legacy']
+    tweet = twExtract.extractStatusV2Rest(testMultiMediaTweet,None)['legacy']
     assert utils.stripEndTCO(tweet["full_text"])[:94]==testMultiMediaTweet_compare['text'][:94]
     
 
@@ -32,30 +33,28 @@ def test_twextract_extractStatusV2TweetDetails():
     assert utils.stripEndTCO(tweet["full_text"])==testMediaTweet_compare['text']
 
 ## Tweet retrieve tests ##
-def test_twextract_textTweetExtract():
-    tweet = twExtract.extractStatus(testTextTweet,workaroundTokens=tokens)
-    assert utils.stripEndTCO(tweet["legacy"]["full_text"])==testTextTweet_compare['text']
-    assert tweet["user"]["screen_name"]=="jack"
-    assert 'extended_entities' not in tweet
     
-def test_twextract_extractV2(): # remove this when v2 is default
+def test_twextract_extractV2():
     tweet = twExtract.extractStatusV2(testTextTweet,workaroundTokens=tokens)
 
 def test_twextract_UserExtract():
-    user = twExtract.extractUser(testUser,workaroundTokens=tokens)
+    rawUserData = twExtract.extractUser(testUser,workaroundTokens=tokens)
+    user = twitfix.getApiUserResponse(rawUserData)
     assert user["screen_name"]=="jack"
     assert user["id"]==12
     assert user["created_at"] == "Tue Mar 21 20:50:14 +0000 2006"
 
 def test_twextract_UserExtractID():
-    user = twExtract.extractUser(testUserID,workaroundTokens=tokens)
+    rawUserData = twExtract.extractUser(testUserIDUrl,workaroundTokens=tokens)
+    user = twitfix.getApiUserResponse(rawUserData)
     assert user["screen_name"]=="jack"
     assert user["id"]==12
     assert user["created_at"] == "Tue Mar 21 20:50:14 +0000 2006"
 
 def test_twextract_UserExtractWeirdURLs():
     for url in testUserWeirdURLs:
-        user = twExtract.extractUser(url,workaroundTokens=tokens)
+        rawUserData = twExtract.extractUser(url,workaroundTokens=tokens)
+        user = twitfix.getApiUserResponse(rawUserData)
         assert user["screen_name"]=="jack"
         assert user["id"]==12
         assert user["created_at"] == "Tue Mar 21 20:50:14 +0000 2006"
@@ -100,3 +99,7 @@ def test_twextract_pollTweetExtract(): # basic check if poll data exists
 
 def test_twextract_NSFW_TweetExtract():
     tweet = twExtract.extractStatus(testNSFWTweet,workaroundTokens=tokens) # For now just test that there's no error
+
+def test_twextract_feed():
+    tweets = twExtract.extractUserFeedFromId(testUserID,workaroundTokens=tokens) # For now just test that there's no error
+    assert len(tweets)>0

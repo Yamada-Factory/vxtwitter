@@ -1,14 +1,75 @@
 import html
 from datetime import datetime
+from flask import json
 from configHandler import config
 from utils import stripEndTCO
 
+def getApiUserResponse(user):
+    userResult = user["data"]["user"]["result"]
+    return {
+        "id": int(userResult["rest_id"]),
+        "screen_name": userResult["core"]["screen_name"],
+        "name": userResult["core"]["name"],
+        "profile_image_url": userResult['avatar']["image_url"],
+        "description": userResult["legacy"]["description"],
+        "location": userResult["location"]["location"],
+        "followers_count": userResult["legacy"]["followers_count"],
+        "following_count": userResult["legacy"]["friends_count"],
+        "tweet_count": userResult["legacy"]["statuses_count"],
+        "created_at": userResult["core"]["created_at"],
+        "protected": userResult["privacy"]["protected"],
+        "fetched_on": int(datetime.now().timestamp()),
+    }
+
+def getBestMediaUrl(mediaList):
+    # find the highest bitrate
+    best_bitrate = -1
+    besturl=""
+    for j in mediaList:
+        if j['content_type'] == "video/mp4" and '/hevc/' not in j["url"] and j['bitrate'] > best_bitrate:
+            besturl = j["url"]
+            best_bitrate = j['bitrate']
+    if "?tag=" in besturl:
+        besturl = besturl[:besturl.index("?tag=")]
+    return besturl
+
+def getExtendedVideoOrGifInfo(mediaEntry):
+    videoInfo = mediaEntry["video_info"]
+    info = {
+        "url": getBestMediaUrl(videoInfo["variants"]),
+        "type": "gif" if mediaEntry.get("type", "") == "animated_gif" else "video",
+        "size": {
+            "width": mediaEntry['original_info']["width"],
+            "height": mediaEntry['original_info']["height"]
+        },
+        "duration_millis": videoInfo.get("duration_millis", 0),
+        "thumbnail_url": mediaEntry.get("media_url_https", None),
+        "altText": mediaEntry.get("ext_alt_text", None),
+        "id_str": mediaEntry.get("id_str", None)
+    }
+    return info
+
+def getExtendedImageInfo(mediaEntry):
+    info = {
+        "url": mediaEntry.get("media_url_https", None),
+        "type": "image",
+        "size": {
+            "width": mediaEntry["original_info"]["width"],
+            "height": mediaEntry["original_info"]["height"]
+        },
+        "thumbnail_url": mediaEntry.get("media_url_https", None),
+        "altText": mediaEntry.get("ext_alt_text", None),
+        "id_str": mediaEntry.get("id_str", None)
+    }
+    return info
+    
 def getApiResponse(tweet,include_txt=False,include_rtf=False):
     tweetL = tweet["legacy"]
     if "user_result" in tweet["core"]:
-        userL = tweet["core"]["user_result"]["result"]["legacy"]
+        user = tweet["core"]["user_result"]["result"]
     elif "user_results" in tweet["core"]:
-        userL = tweet["core"]["user_results"]["result"]["legacy"]
+        user = tweet["core"]["user_results"]["result"]
+    userL = user["legacy"]
     media=[]
     media_extended=[]
     hashtags=[]
@@ -16,6 +77,14 @@ def getApiResponse(tweet,include_txt=False,include_rtf=False):
     oldTweetVersion = False
     tweetArticle=None
     lang=None
+
+    if "screen_name" not in userL:
+        userL["screen_name"] = user["core"]["screen_name"]
+    if "name" not in userL:
+        userL["name"] = user["core"]["name"]
+    if "profile_image_url_https" not in userL:
+        userL["profile_image_url_https"] = user["avatar"]["image_url"]
+
     #editedTweet=False
     try:
         if "birdwatch_pivot" in tweet:
@@ -43,61 +112,55 @@ def getApiResponse(tweet,include_txt=False,include_rtf=False):
             for i in tmedia:
                 extendedInfo={}
                 if "video_info" in i:
-                    # find the highest bitrate
-                    best_bitrate = -1
-                    besturl=""
-                    for j in i["video_info"]["variants"]:
-                        if j['content_type'] == "video/mp4" and '/hevc/' not in j["url"] and j['bitrate'] > best_bitrate:
-                            besturl = j['url']
-                            best_bitrate = j['bitrate']
-                    if "?tag=" in besturl:
-                        besturl = besturl[:besturl.index("?tag=")]
-                    media.append(besturl)
-                    extendedInfo["url"] = besturl
-                    extendedInfo["type"] = "video"
-                    if (i["type"] == "animated_gif"):
-                        extendedInfo["type"] = "gif"
-                    altText = None
-                    extendedInfo["size"] = {"width":i["original_info"]["width"],"height":i["original_info"]["height"]}
-                    if "ext_alt_text" in i:
-                        altText=i["ext_alt_text"]
-                    if "duration_millis" in i["video_info"]:
-                        extendedInfo["duration_millis"] = i["video_info"]["duration_millis"]
-                    else:
-                        extendedInfo["duration_millis"] = 0
-                    extendedInfo["thumbnail_url"] = i["media_url_https"]
-                    extendedInfo["altText"] = altText
+                    extendedInfo = getExtendedVideoOrGifInfo(i)
+                    media.append(extendedInfo["url"])
                     media_extended.append(extendedInfo)
                 else:
-                    media.append(i["media_url_https"])
-                    extendedInfo["url"] = i["media_url_https"]
-                    altText=None
-                    if "ext_alt_text" in i:
-                        altText=i["ext_alt_text"]
-                    extendedInfo["altText"] = altText
-                    extendedInfo["type"] = "image"
-                    extendedInfo["size"] = {"width":i["original_info"]["width"],"height":i["original_info"]["height"]}
-                    extendedInfo["thumbnail_url"] = i["media_url_https"]
+                    extendedInfo = getExtendedImageInfo(i)
                     media_extended.append(extendedInfo)
+                    media.append(extendedInfo["url"])
 
         if "hashtags" in tweetL["entities"]:
             for i in tweetL["entities"]["hashtags"]:
                 hashtags.append(i["text"])
-    elif "card" in tweet and tweet['card']['name'] == "player":
-        width = None
-        height = None
-        vidUrl = None
-        for i in tweet['card']['binding_values']:
-            if i['key'] == 'player_stream_url':
-                vidUrl = i['value']['string_value']
-            elif i['key'] == 'player_width':
-                width = int(i['value']['string_value'])
-            elif i['key'] == 'player_height':
-                height = int(i['value']['string_value'])
-        if vidUrl != None and width != None and height != None:
-            media.append(vidUrl)
-            media_extended.append({"url":vidUrl,"type":"video","size":{"width":width,"height":height}})
-
+    elif "card" in tweet or "tweet_card" in tweet:
+        cardData = tweet["card" if "card" in tweet else "tweet_card"]
+        bindingValues = None
+        if 'binding_values' in cardData:
+            bindingValues = cardData['binding_values']
+        elif 'legacy' in cardData and 'binding_values' in cardData['legacy']:
+            bindingValues = cardData['legacy']['binding_values']
+        if bindingValues != None:
+            if 'name' in cardData and cardData['name'] == "player":
+                width = None
+                height = None
+                vidUrl = None
+                for i in bindingValues:
+                    if i['key'] == 'player_stream_url':
+                        vidUrl = i['value']['string_value']
+                    elif i['key'] == 'player_width':
+                        width = int(i['value']['string_value'])
+                    elif i['key'] == 'player_height':
+                        height = int(i['value']['string_value'])
+                if vidUrl != None and width != None and height != None:
+                    media.append(vidUrl)
+                    media_extended.append({"url":vidUrl,"type":"video","size":{"width":width,"height":height}})
+            else:
+                for i in bindingValues:
+                    if i['key'] == 'unified_card' and 'value' in i and 'string_value' in i['value']:
+                        cardData = json.loads(i['value']['string_value'])
+                        media_key = cardData['component_objects']['media_1']['data']['id']
+                        media_entry = cardData['media_entities'][media_key]
+                        extendedInfo = getExtendedVideoOrGifInfo(media_entry)
+                        media.append(extendedInfo['url'])
+                        media_extended.append(extendedInfo)
+                        break
+                    elif i['key'] == 'photo_image_full_size_large' and 'value' in i and 'image_value' in i['value']:
+                        imgData = i['value']['image_value']
+                        imgurl = imgData['url']
+                        media.append(imgurl)
+                        media_extended.append({"url":imgurl,"type":"image","size":{"width":imgData['width'],"height":imgData['height']}})
+                        break
     if "article" in tweet:
         try:
             result = tweet["article"]["article_results"]["result"]
@@ -128,13 +191,24 @@ def getApiResponse(tweet,include_txt=False,include_rtf=False):
     if 'quoted_status_id_str' in tweetL:
         qrtURL = "https://twitter.com/i/status/" + tweetL['quoted_status_id_str']
 
+    retweetURL = None
+    if 'retweeted_status_result' in tweetL:
+        retweetURL = "https://twitter.com/i/status/" + tweetL['retweeted_status_result']['result']['rest_id']
+
     if 'possibly_sensitive' not in tweetL:
         tweetL['possibly_sensitive'] = False
 
     twText = html.unescape(tweetL["full_text"])
 
+    if 'note_tweet' in tweet and tweet['note_tweet'] != None and 'note_tweet_results' in tweet['note_tweet']:
+        noteTweet = tweet['note_tweet']['note_tweet_results']['result']
+        if 'text' in noteTweet:
+            twText = noteTweet['text']
+
     if 'entities' in tweetL and 'urls' in tweetL['entities']:
         for eurl in tweetL['entities']['urls']:
+            if 'expanded_url' not in eurl:
+                continue
             if "/status/" in eurl["expanded_url"] and eurl["expanded_url"].startswith("https://twitter.com/"):
                 twText = twText.replace(eurl["url"], "")
             else:
@@ -190,11 +264,18 @@ def getApiResponse(tweet,include_txt=False,include_rtf=False):
                 totalVotes += option["votes"]
                 pollData["options"].append(option)
         for i in pollData["options"]:
-            i["percent"] = round((i["votes"]/totalVotes)*100,2)
+            i["percent"] = round((i["votes"]/totalVotes)*100,2) if totalVotes > 0 else 0
         
     if 'lang' in tweetL:
         lang = tweetL['lang']
 
+    replyingTo = None
+    if 'in_reply_to_screen_name' in tweetL and tweetL['in_reply_to_screen_name'] != None:
+        replyingTo = tweetL['in_reply_to_screen_name']
+
+    replyingToID = None
+    if 'in_reply_to_status_id_str' in tweetL and tweetL['in_reply_to_status_id_str'] != None:
+        replyingToID = tweetL['in_reply_to_status_id_str']
 
     apiObject = {
         "text": twText,
@@ -219,7 +300,11 @@ def getApiResponse(tweet,include_txt=False,include_rtf=False):
         "combinedMediaUrl": combinedMediaUrl,
         "pollData": pollData,
         "article": tweetArticle,
-        "lang": lang
+        "lang": lang,
+        "replyingTo": replyingTo,
+        "replyingToID": replyingToID,
+        "fetched_on": int(datetime.now().timestamp()),
+        "retweetURL":retweetURL,
     }
     try:
         apiObject["date_epoch"] = int(datetime.strptime(tweetL["created_at"], "%a %b %d %H:%M:%S %z %Y").timestamp())

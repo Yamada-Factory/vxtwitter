@@ -49,7 +49,9 @@ def addVnfToTweetIdCache(tweet_id, vnf):
     global link_cache
     try:
         if link_cache_system == "db":
-                out = db.linkCache.update_one(vnf)
+                filter_query = {'tweet': tweet_id}
+                update_operation = {'$set': vnf}
+                out = db.linkCache.update_one(filter_query, update_operation, upsert=True)
                 log.debug("Link added to DB cache ")
                 return True
         elif link_cache_system == "json":
@@ -86,7 +88,7 @@ def getVnfFromTweetIdCache(tweet_id):
         collection = db.linkCache
         vnf        = collection.find_one({'tweet': tweet_id})
         if vnf != None: 
-            hits   = ( vnf['hits'] + 1 ) 
+            hits   = ( vnf.get('hits', 0) + 1 ) 
             log.debug("Link located in DB cache.")
             query  = { 'tweet': tweet_id }
             change = { "$set" : { "hits" : hits } }

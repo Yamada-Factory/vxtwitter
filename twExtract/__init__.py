@@ -185,7 +185,7 @@ def extractStatus_token(url,workaroundTokens):
     random.shuffle(tokens)
     for authToken in tokens:
         try:
-            
+
             tweet = requests.get(f"https://api.{twitterUrl}/1.1/statuses/show/" + twid + ".json?tweet_mode=extended&cards_platform=Web-12&include_cards=1&include_reply_count=1&include_user_entities=0", headers=getAuthHeaders(bearer,authToken=authToken))
             output = tweet.json()
             if "errors" in output:
@@ -219,9 +219,8 @@ def extractStatus_syndication(url,workaroundTokens=None):
     if m is None:
         raise TwExtractError(400, "Extract error")
     twid = m.group(2)
+
     tweet = requests.get("https://cdn.syndication.twimg.com/tweet-result?id=" + twid+"&token="+twUtils.calcSyndicationToken(twid))
-    
-    
     if tweet.status_code == 404:
         raise TwExtractError(404, "Tweet not found")
     output = tweet.json()
@@ -229,7 +228,7 @@ def extractStatus_syndication(url,workaroundTokens=None):
         # pick the first error and create a twExtractError
         error = output["errors"][0]
         raise TwExtractError(error["code"], error["message"])
-    
+
     # change returned data to match the one from the other methods
     output['full_text'] = output['text']
     output['user']['profile_image_url'] = output['user']['profile_image_url_https']
@@ -343,7 +342,7 @@ def extractStatusV2Android(url,workaroundTokens):
                 # try another token
                 raise TwExtractError(400, "Extract error: rate limit reached")
             output = tweet.json()
-            
+
             if "errors" in output:
                 print(f"Error in output: {json.dumps(output['errors'])}")
                 # try another token
@@ -403,7 +402,7 @@ def extractStatusV2TweetDetail(url,workaroundTokens):
                 # try another token
                 raise TwExtractError(400, "Extract error: rate limit reached")
             output = tweet.json()
-            
+
             if "errors" in output:
                 print(f"Error in output: {json.dumps(output['errors'])}")
                 # try another token
@@ -472,7 +471,7 @@ def extractStatusV2Rest(url,workaroundTokens):
         if tweet.status_code == 429:
             raise TwExtractError(400, "Extract error")
         output = tweet.json()
-        
+
         if "errors" in output:
             raise TwExtractError(400, "Extract error")
         entry=output['data']['tweetResult']

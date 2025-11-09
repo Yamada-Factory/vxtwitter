@@ -45,15 +45,15 @@ generate_embed_user_agents = [
     "facebookexternalhit/1.1",
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/31.0.1650.57 Safari/537.36",
     "Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/1596241936; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36",
-    "Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/0; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36", 
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0", 
+    "Mozilla/5.0 (Windows; U; Windows NT 10.0; en-US; Valve Steam Client/default/0; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0",
     "facebookexternalhit/1.1",
-    "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam FriendsUI Tenfoot/0; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36", 
-    "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)", 
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0", 
-    "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)", 
-    "TelegramBot (like TwitterBot)", 
-    "Mozilla/5.0 (compatible; January/1.0; +https://gitlab.insrt.uk/revolt/january)", 
+    "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; Valve Steam FriendsUI Tenfoot/0; ) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36",
+    "Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:38.0) Gecko/20100101 Firefox/38.0",
+    "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
+    "TelegramBot (like TwitterBot)",
+    "Mozilla/5.0 (compatible; January/1.0; +https://gitlab.insrt.uk/revolt/january)",
     "Synapse (bot; +https://github.com/matrix-org/synapse)",
     "Iframely/1.3.1 (+https://iframely.com/docs/about)",
     "test"]
@@ -99,7 +99,7 @@ def renderImageTweetEmbed(tweetData,image,appnameSuffix="",embedIndex=-1):
 
     if image.startswith("https://pbs.twimg.com") and "?" not in image:
         image = f"{image}?name=orig"
-    
+
     return render_template("image.html",
                     tweet=tweetData,
                     pic=[image],
@@ -178,6 +178,10 @@ def renderUserEmbed(userData,appnameSuffix=""):
                     appname=config['config']['appname'],
                     color=config['config']['color']
                     )
+
+@app.route('/healthcheck')
+def healthcheck():
+    return "OK"
 
 @app.route('/robots.txt')
 def robots():
@@ -313,6 +317,9 @@ def twitfix(sub_path):
         user_agent = "unknown"
 
     isApiRequest=request.url.startswith("https://api.vx") or request.url.startswith("http://api.vx")
+
+    # 強制的にAPIモード
+    isApiRequest = True
     if not isApiRequest and (request.url.startswith("https://l.vx") or request.url.startswith("https://old.vx")) and "Discord" in user_agent:
         user_agent = user_agent.replace("Discord","LegacyEmbed") # TODO: Clean up; This is a hacky fix to make the new activity embed not trigger
     if sub_path in staticFiles:
@@ -364,7 +371,12 @@ def twitfix(sub_path):
     tweetData = getTweetData(twitter_url,include_txt,include_rtf)
     if tweetData is None:
         log.error("Tweet Data Get failed for "+twitter_url)
-        return message(msgs.failedToScan)
+
+        if isApiRequest:
+            return jsonify({"error": msgs.tweetNotFound}), 500
+        else:
+            return message(msgs.tweetNotFound)
+
     qrt = None
     if 'qrtURL' in tweetData and tweetData['qrtURL'] is not None:
         qrt = getTweetData(tweetData['qrtURL'])
@@ -407,7 +419,7 @@ def twitfix(sub_path):
     if sub_path[-2:] in ["/1","/2","/3","/4"]:
         embedIndex = int(sub_path[-1])-1
         sub_path = sub_path[:-2]
-        
+
     if isApiRequest: # Directly return the API response if the request is from the API
         return tweetData
     elif directEmbed: # direct embed

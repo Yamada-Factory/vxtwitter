@@ -16,7 +16,7 @@ from cache import addVnfToLinkCache,getVnfFromLinkCache
 import vxlogging as log
 from utils import getTweetIdFromUrl, pathregex, determineMediaToEmbed, determineEmbedTweet, BytesIOWrapper, fixMedia
 from vxApi import getApiResponse, getApiUserResponse
-from urllib.parse import urlparse 
+from urllib.parse import urlparse
 from PyRTF.Elements import Document
 from PyRTF.document.section import Section
 from PyRTF.document.paragraph import Paragraph
@@ -68,11 +68,11 @@ def isValidUserAgent(user_agent):
 
 def message(text):
     rendered = render_template(
-        'default.html', 
-        message = text, 
-        color   = config['config']['color'], 
-        appname = config['config']['appname'], 
-        repo    = config['config']['repo'], 
+        'default.html',
+        message = text,
+        color   = config['config']['color'],
+        appname = config['config']['appname'],
+        repo    = config['config']['repo'],
         url     = config['config']['url'] )
     return Response(rendered, mimetype='text/html',headers={"Cache-Tag": "message", "Cache-Control": "max-age=1760, public"})
 
@@ -178,10 +178,6 @@ def renderUserEmbed(userData,appnameSuffix=""):
                     appname=config['config']['appname'],
                     color=config['config']['color']
                     )
-
-@app.route('/healthcheck')
-def healthcheck():
-    return "OK"
 
 @app.route('/robots.txt')
 def robots():
@@ -371,12 +367,7 @@ def twitfix(sub_path):
     tweetData = getTweetData(twitter_url,include_txt,include_rtf)
     if tweetData is None:
         log.error("Tweet Data Get failed for "+twitter_url)
-
-        if isApiRequest:
-            return jsonify({"error": msgs.tweetNotFound}), 500
-        else:
-            return message(msgs.tweetNotFound)
-
+        return message(msgs.failedToScan)
     qrt = None
     if 'qrtURL' in tweetData and tweetData['qrtURL'] is not None:
         qrt = getTweetData(tweetData['qrtURL'])
@@ -439,7 +430,7 @@ def twitfix(sub_path):
     else: # full embed
         embedTweetData = determineEmbedTweet(tweetData)
         embeddingMedia = embedTweetData['hasMedia']
-        
+
         if "article" in embedTweetData and embedTweetData["article"] is not None:
             return Response(renderArticleTweetEmbed(tweetData," • See original tweet for full article"),headers={"Cache-Tag": "embed"})
         elif not embeddingMedia:
